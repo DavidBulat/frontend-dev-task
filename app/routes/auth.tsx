@@ -21,7 +21,7 @@ import {
 } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
 import { Spinner } from "~/components/ui/spinner";
-import { login } from "~/utils/auth";
+import { useLoginMutation } from "~/hooks/use-queries";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -32,25 +32,19 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Auth() {
   const navigate = useNavigate();
+  const loginMutation = useLoginMutation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
 
-    const session = await login(username, password);
-
-    if (!session) {
-      setError("Invalid username or password. Please try again.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    navigate("/");
+    loginMutation.mutate(
+      { username, password },
+      {
+        onSuccess: () => navigate("/"),
+      }
+    );
   }
 
   return (
@@ -65,11 +59,13 @@ export default function Auth() {
         <form onSubmit={handleSubmit}>
           <CardContent>
             <FieldGroup>
-              {error && (
+              {loginMutation.isError && (
                 <Alert variant="destructive">
                   <AlertCircleIcon />
                   <AlertTitle>Sign in failed</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
+                  <AlertDescription>
+                    Invalid username or password. Please try again.
+                  </AlertDescription>
                 </Alert>
               )}
               <Field>
@@ -82,7 +78,7 @@ export default function Auth() {
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
                   required
-                  disabled={isSubmitting}
+                  disabled={loginMutation.isPending}
                 />
               </Field>
               <Field>
@@ -96,7 +92,7 @@ export default function Auth() {
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   required
-                  disabled={isSubmitting}
+                  disabled={loginMutation.isPending}
                 />
                 <FieldDescription>
                   Demo credentials: emilys / emilyspass
@@ -105,8 +101,12 @@ export default function Auth() {
             </FieldGroup>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? (
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loginMutation.isPending}
+            >
+              {loginMutation.isPending ? (
                 <>
                   <Spinner />
                   Signing in...

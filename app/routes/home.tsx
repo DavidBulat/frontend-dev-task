@@ -1,13 +1,17 @@
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import { ProductsView } from "~/components/products/products-view";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "Products" },
+    { name: "description", content: "Browse products from DummyJSON" },
   ];
 }
 
 export default function Home() {
-  return <Welcome />;
+  return (
+    <main className="container mx-auto px-4 py-8">
+      <ProductsView />
+    </main>
+  );
 }
