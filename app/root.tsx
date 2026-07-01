@@ -8,6 +8,7 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+import { Navbar } from "~/components/navbar";
 import { QueryProvider } from "~/components/providers/query-provider";
 import "./app.css";
 
@@ -45,6 +46,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <QueryProvider>
+      <Navbar />
       <Outlet />
     </QueryProvider>
   );
