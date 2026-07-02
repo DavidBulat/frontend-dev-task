@@ -21,15 +21,36 @@ export type ProductsResponse = {
 export type ProductView = "cards" | "table";
 export type ProductScrollMode = "pages" | "infinite";
 
-export type ProductSearchParams = {
+export type ProductFilters = {
+  q: string;
+  category: string;
+  minPrice: number | null;
+  maxPrice: number | null;
+};
+
+export type ProductSearchParams = ProductFilters & {
   page: number;
   limit: number;
   view: ProductView;
   scroll: ProductScrollMode;
 };
 
+export type ProductListFilters = ProductFilters & {
+  limit: number;
+  page: number;
+};
+
 export const DEFAULT_LIMIT = 12;
 export const LIMIT_OPTIONS = [12, 24, 48] as const;
+
+function parseOptionalPrice(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
 
 export function parseProductSearchParams(
   searchParams: URLSearchParams
@@ -38,6 +59,10 @@ export function parseProductSearchParams(
   const rawLimit = Number(searchParams.get("limit"));
 
   return {
+    q: searchParams.get("q")?.trim() ?? "",
+    category: searchParams.get("category") ?? "",
+    minPrice: parseOptionalPrice(searchParams.get("minPrice")),
+    maxPrice: parseOptionalPrice(searchParams.get("maxPrice")),
     page: Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1,
     limit:
       Number.isFinite(rawLimit) && rawLimit > 0
@@ -49,12 +74,41 @@ export function parseProductSearchParams(
   };
 }
 
+export function toProductListFilters(
+  params: ProductSearchParams
+): ProductListFilters {
+  return {
+    q: params.q,
+    category: params.category,
+    minPrice: params.minPrice,
+    maxPrice: params.maxPrice,
+    limit: params.limit,
+    page: params.page,
+  };
+}
+
 export function buildProductSearchParams(
   current: URLSearchParams,
   updates: Partial<ProductSearchParams>
 ) {
   const next = { ...parseProductSearchParams(current), ...updates };
   const params = new URLSearchParams();
+
+  if (next.q) {
+    params.set("q", next.q);
+  }
+
+  if (next.category) {
+    params.set("category", next.category);
+  }
+
+  if (next.minPrice != null) {
+    params.set("minPrice", String(next.minPrice));
+  }
+
+  if (next.maxPrice != null) {
+    params.set("maxPrice", String(next.maxPrice));
+  }
 
   if (next.page !== 1) {
     params.set("page", String(next.page));
@@ -75,22 +129,99 @@ export function buildProductSearchParams(
   return params;
 }
 
+export function hasActiveProductFilters(filters: ProductFilters) {
+  return (
+    !!filters.q ||
+    !!filters.category ||
+    filters.minPrice != null ||
+    filters.maxPrice != null
+  );
+}
+
+function applyClientFilters(
+  products: Product[],
+  { category, minPrice, maxPrice, q }: ProductFilters
+) {
+  return products.filter((product) => {
+    if (q && category && product.category !== category) {
+      return false;
+    }
+
+    if (minPrice != null && product.price < minPrice) {
+      return false;
+    }
+
+    if (maxPrice != null && product.price > maxPrice) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+export async function fetchCategories() {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL}/products/category-list`
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch categories");
+  }
+
+  return (await response.json()) as string[];
+}
+
 export async function fetchProducts({
   limit = DEFAULT_LIMIT,
   skip = 0,
-}: {
+  q = "",
+  category = "",
+  minPrice = null,
+  maxPrice = null,
+}: ProductFilters & {
   limit?: number;
   skip?: number;
-} = {}) {
-  const response = await fetch(
-    `${import.meta.env.VITE_API_URL}/products?limit=${limit}&skip=${skip}`
-  );
+}) {
+  const filters: ProductFilters = { q, category, minPrice, maxPrice };
+
+  if (!hasActiveProductFilters(filters)) {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/products?limit=${limit}&skip=${skip}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch products");
+    }
+
+    return (await response.json()) as ProductsResponse;
+  }
+
+  let url: string;
+
+  if (q) {
+    url = `${import.meta.env.VITE_API_URL}/products/search?q=${encodeURIComponent(q)}&limit=0`;
+  } else if (category) {
+    url = `${import.meta.env.VITE_API_URL}/products/category/${encodeURIComponent(category)}?limit=0`;
+  } else {
+    url = `${import.meta.env.VITE_API_URL}/products?limit=0`;
+  }
+
+  const response = await fetch(url);
 
   if (!response.ok) {
     throw new Error("Failed to fetch products");
   }
 
-  return (await response.json()) as ProductsResponse;
+  const data = (await response.json()) as ProductsResponse;
+  const filtered = applyClientFilters(data.products, filters);
+  const paginated = filtered.slice(skip, skip + limit);
+
+  return {
+    products: paginated,
+    total: filtered.length,
+    skip,
+    limit,
+  } satisfies ProductsResponse;
 }
 
 export function formatPrice(price: number) {

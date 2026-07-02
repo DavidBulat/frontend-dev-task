@@ -1,31 +1,36 @@
-import { AlertCircleIcon } from "lucide-react";
+import { AlertCircleIcon, SearchXIcon } from "lucide-react";
 
 import { ProductCards } from "~/components/products/product-cards";
 import { ProductPagination } from "~/components/products/product-pagination";
 import { ProductsLoadingSkeleton } from "~/components/products/products-loading-skeleton";
 import { ProductTable } from "~/components/products/product-table";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "~/components/ui/empty";
 import { useProductsQuery } from "~/hooks/use-queries";
-import type { ProductView } from "~/utils/products";
+import type { ProductListFilters, ProductView } from "~/utils/products";
 
 type ProductPagesContentProps = {
-  page: number;
-  limit: number;
+  filters: ProductListFilters;
   view: ProductView;
 };
 
 export function ProductPagesContent({
-  page,
-  limit,
+  filters,
   view,
 }: ProductPagesContentProps) {
-  const { data, isPending, isError, error } = useProductsQuery(limit, page);
+  const { data, isPending, isError, error } = useProductsQuery(filters);
 
   if (isPending) {
     return (
       <ProductsLoadingSkeleton
         view={view}
-        count={limit}
+        count={filters.limit}
         showPagination
       />
     );
@@ -43,6 +48,22 @@ export function ProductPagesContent({
     );
   }
 
+  if (data.products.length === 0) {
+    return (
+      <Empty className="border">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <SearchXIcon />
+          </EmptyMedia>
+          <EmptyTitle>No products found</EmptyTitle>
+          <EmptyDescription>
+            Try adjusting your search or filter criteria.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
+  }
+
   return (
     <>
       {view === "cards" ? (
@@ -50,7 +71,11 @@ export function ProductPagesContent({
       ) : (
         <ProductTable products={data.products} />
       )}
-      <ProductPagination page={page} limit={limit} total={data.total} />
+      <ProductPagination
+        page={filters.page}
+        limit={filters.limit}
+        total={data.total}
+      />
     </>
   );
 }

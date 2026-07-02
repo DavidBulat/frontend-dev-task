@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useSearchParams } from "react-router";
 
+import { ProductFiltersBar } from "~/components/products/product-filters";
 import { ProductInfiniteScroll } from "~/components/products/product-infinite-scroll";
 import { ProductPagesContent } from "~/components/products/product-pages-content";
 import { ProductsSummarySkeleton } from "~/components/products/products-loading-skeleton";
@@ -23,21 +24,32 @@ import {
   getPageRange,
   LIMIT_OPTIONS,
   parseProductSearchParams,
+  toProductListFilters,
 } from "~/utils/products";
 
 export function ProductsView() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { page, limit, view, scroll } = parseProductSearchParams(searchParams);
+  const params = parseProductSearchParams(searchParams);
+  const { page, limit, view, scroll } = params;
+  const filters = toProductListFilters(params);
   const isInfinite = scroll === "infinite";
 
   function updateParams(updates: Parameters<typeof buildProductSearchParams>[1]) {
     setSearchParams(buildProductSearchParams(searchParams, updates));
   }
 
+  const filterKey = [
+    params.q,
+    params.category,
+    params.minPrice,
+    params.maxPrice,
+    limit,
+  ].join("-");
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <ProductsSummary page={page} limit={limit} isInfinite={isInfinite} />
+        <ProductsSummary filters={filters} isInfinite={isInfinite} />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <Tabs
@@ -98,22 +110,30 @@ export function ProductsView() {
         </div>
       </div>
 
+      <ProductFiltersBar />
+
       {isInfinite ? (
-        <ProductInfiniteScroll key={limit} limit={limit} view={view} />
+        <ProductInfiniteScroll
+          key={filterKey}
+          filters={filters}
+          view={view}
+        />
       ) : (
-        <ProductPagesContent page={page} limit={limit} view={view} />
+        <ProductPagesContent
+          key={filterKey}
+          filters={filters}
+          view={view}
+        />
       )}
     </div>
   );
 }
 
 function ProductsSummary({
-  page,
-  limit,
+  filters,
   isInfinite,
 }: {
-  page: number;
-  limit: number;
+  filters: ReturnType<typeof toProductListFilters>;
   isInfinite: boolean;
 }) {
   return (
@@ -123,29 +143,52 @@ function ProductsSummary({
       </h1>
       <p className="text-sm text-muted-foreground">
         {isInfinite ? (
-          <InfiniteSummary limit={limit} />
+          <InfiniteSummary filters={filters} />
         ) : (
-          <PaginatedSummary page={page} limit={limit} />
+          <PaginatedSummary filters={filters} />
         )}
       </p>
     </div>
   );
 }
 
-function PaginatedSummary({ page, limit }: { page: number; limit: number }) {
-  const { data, isPending } = useProductsQuery(limit, page);
+function PaginatedSummary({
+  filters,
+}: {
+  filters: ReturnType<typeof toProductListFilters>;
+}) {
+  const { data, isPending } = useProductsQuery(filters);
 
   if (isPending || !data) {
     return <ProductsSummarySkeleton />;
   }
 
-  const { start, end } = getPageRange(page, limit, data.total);
+  const { start, end } = getPageRange(filters.page, filters.limit, data.total);
 
-  return <>Showing {start}-{end} of {data.total} products</>;
+  if (data.total === 0) {
+    return <>No products match your filters</>;
+  }
+
+  return (
+    <>
+      Showing {start}-{end} of {data.total} products
+    </>
+  );
 }
 
-function InfiniteSummary({ limit }: { limit: number }) {
-  const { data, isPending } = useInfiniteProductsQuery(limit);
+function InfiniteSummary({
+  filters,
+}: {
+  filters: ReturnType<typeof toProductListFilters>;
+}) {
+  const { q, category, minPrice, maxPrice, limit } = filters;
+  const { data, isPending } = useInfiniteProductsQuery({
+    q,
+    category,
+    minPrice,
+    maxPrice,
+    limit,
+  });
 
   if (isPending || !data) {
     return <ProductsSummarySkeleton />;
@@ -154,5 +197,13 @@ function InfiniteSummary({ limit }: { limit: number }) {
   const products = data.pages.flatMap((page) => page.products);
   const total = data.pages[0]?.total ?? 0;
 
-  return <>Loaded {products.length} of {total} products</>;
+  if (total === 0) {
+    return <>No products match your filters</>;
+  }
+
+  return (
+    <>
+      Loaded {products.length} of {total} products
+    </>
+  );
 }

@@ -1,9 +1,11 @@
 export const queryKeys = {
   products: {
     all: ["products"] as const,
-    list: (limit: number, skip: number) =>
-      ["products", "list", { limit, skip }] as const,
-    infinite: (limit: number) => ["products", "infinite", { limit }] as const,
+    categories: () => ["products", "categories"] as const,
+    list: (filters: Record<string, unknown>) =>
+      ["products", "list", filters] as const,
+    infinite: (filters: Record<string, unknown>) =>
+      ["products", "infinite", filters] as const,
   },
   auth: {
     all: ["auth"] as const,

@@ -14,21 +14,65 @@ import {
   refreshSession,
   type AuthSession,
 } from "~/utils/auth";
-import { fetchProducts } from "~/utils/products";
+import {
+  fetchCategories,
+  fetchProducts,
+  type ProductFilters,
+  type ProductListFilters,
+} from "~/utils/products";
 
-export function useProductsQuery(limit: number, page: number) {
-  const skip = (page - 1) * limit;
+function toListQueryFilters({ page, ...filters }: ProductListFilters) {
+  return {
+    ...filters,
+    skip: (page - 1) * filters.limit,
+  };
+}
 
+function toInfiniteQueryFilters(filters: ProductFilters & { limit: number }) {
+  return filters;
+}
+
+export function useCategoriesQuery() {
   return useQuery({
-    queryKey: queryKeys.products.list(limit, skip),
-    queryFn: () => fetchProducts({ limit, skip }),
+    queryKey: queryKeys.products.categories(),
+    queryFn: fetchCategories,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
-export function useInfiniteProductsQuery(limit: number) {
+export function useProductsQuery(filters: ProductListFilters) {
+  const queryFilters = toListQueryFilters(filters);
+
+  return useQuery({
+    queryKey: queryKeys.products.list(queryFilters),
+    queryFn: () =>
+      fetchProducts({
+        q: filters.q,
+        category: filters.category,
+        minPrice: filters.minPrice,
+        maxPrice: filters.maxPrice,
+        limit: filters.limit,
+        skip: queryFilters.skip,
+      }),
+  });
+}
+
+export function useInfiniteProductsQuery(
+  filters: ProductFilters & { limit: number }
+) {
+  const queryFilters = toInfiniteQueryFilters(filters);
+
   return useInfiniteQuery({
-    queryKey: queryKeys.products.infinite(limit),
-    queryFn: ({ pageParam }) => fetchProducts({ limit, skip: pageParam }),
+    queryKey: queryKeys.products.infinite(queryFilters),
+    queryFn: ({ pageParam }) =>
+      fetchProducts({
+        q: filters.q,
+        category: filters.category,
+        minPrice: filters.minPrice,
+        maxPrice: filters.maxPrice,
+        limit: filters.limit,
+        skip: pageParam,
+      }),
     initialPageParam: 0,
     getNextPageParam: (lastPage) => {
       const nextSkip = lastPage.skip + lastPage.products.length;

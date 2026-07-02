@@ -1,24 +1,32 @@
 import { useEffect, useRef } from "react";
-import { AlertCircleIcon } from "lucide-react";
+import { AlertCircleIcon, SearchXIcon } from "lucide-react";
 
 import { ProductCards } from "~/components/products/product-cards";
 import { ProductCardSkeleton } from "~/components/products/product-card-skeleton";
 import { ProductsLoadingSkeleton } from "~/components/products/products-loading-skeleton";
 import { ProductTable } from "~/components/products/product-table";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "~/components/ui/empty";
 import { useInfiniteProductsQuery } from "~/hooks/use-queries";
-import type { ProductView } from "~/utils/products";
+import type { ProductFilters, ProductView } from "~/utils/products";
 
 type ProductInfiniteScrollProps = {
-  limit: number;
+  filters: ProductFilters & { limit: number; page: number };
   view: ProductView;
 };
 
 export function ProductInfiniteScroll({
-  limit,
+  filters,
   view,
 }: ProductInfiniteScrollProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const { q, category, minPrice, maxPrice, limit } = filters;
   const {
     data,
     isPending,
@@ -27,7 +35,13 @@ export function ProductInfiniteScroll({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteProductsQuery(limit);
+  } = useInfiniteProductsQuery({
+    q,
+    category,
+    minPrice,
+    maxPrice,
+    limit,
+  });
 
   useEffect(() => {
     const node = sentinelRef.current;
@@ -68,8 +82,23 @@ export function ProductInfiniteScroll({
 
   const products = data.pages.flatMap((page) => page.products);
   const total = data.pages[0]?.total ?? 0;
-
   const loadingRows = isFetchingNextPage ? Math.min(limit, 4) : 0;
+
+  if (products.length === 0) {
+    return (
+      <Empty className="border">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <SearchXIcon />
+          </EmptyMedia>
+          <EmptyTitle>No products found</EmptyTitle>
+          <EmptyDescription>
+            Try adjusting your search or filter criteria.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
+  }
 
   return (
     <div className="space-y-6">
