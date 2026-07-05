@@ -19,6 +19,7 @@ import {
   useInfiniteProductsQuery,
   useProductsQuery,
 } from "~/hooks/use-queries";
+import { useRestoreListScroll } from "~/hooks/use-restore-list-scroll";
 import {
   buildProductSearchParams,
   getPageRange,
@@ -45,6 +46,18 @@ export function ProductsView() {
     params.maxPrice,
     limit,
   ].join("-");
+
+  const { isPending: isPagesPending } = useProductsQuery(filters);
+  const { isPending: isInfinitePending } = useInfiniteProductsQuery({
+    q: params.q,
+    category: params.category,
+    minPrice: params.minPrice,
+    maxPrice: params.maxPrice,
+    limit,
+  });
+  const isContentReady = isInfinite ? !isInfinitePending : !isPagesPending;
+
+  useRestoreListScroll(isContentReady);
 
   return (
     <div className="space-y-6">

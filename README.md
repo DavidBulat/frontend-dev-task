@@ -94,7 +94,7 @@ Testovi pokrivaju:
 ### Detalji proizvoda (`/products/:id`)
 
 - Galerija slika, puni opis, ocjena, kategorija, zaliha, recenzije
-- Povratak na listu uz očuvanje filtera (URL query parametri)
+- Povratak na listu uz očuvanje filtera (URL query parametri) i scroll pozicije
 
 ### Filtriranje i pretraga
 

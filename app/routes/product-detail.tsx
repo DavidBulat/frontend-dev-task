@@ -81,7 +81,7 @@ export default function ProductDetail({ params }: Route.ComponentProps) {
           variant="ghost"
           size="sm"
           nativeButton={false}
-          render={<Link to={returnTo} />}
+          render={<Link to={returnTo} preventScrollReset />}
           className="pl-1.5!"
         >
           <ArrowLeftIcon data-icon="inline-start" />
@@ -195,7 +195,7 @@ function ProductNotFound({
         variant="ghost"
         size="sm"
         nativeButton={false}
-        render={<Link to={returnTo} />}
+        render={<Link to={returnTo} preventScrollReset />}
         className="pl-1.5!"
       >
         <ArrowLeftIcon data-icon="inline-start" />

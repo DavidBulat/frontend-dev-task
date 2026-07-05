@@ -9,7 +9,10 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { getProductReturnTo } from "~/utils/product-navigation";
+import {
+  getProductDetailState,
+  saveListScrollPosition,
+} from "~/utils/product-navigation";
 import type { Product } from "~/utils/products";
 import { formatPrice, truncateDescription } from "~/utils/products";
 
@@ -19,7 +22,14 @@ type ProductCardsProps = {
 
 export function ProductCards({ products }: ProductCardsProps) {
   const location = useLocation();
-  const returnTo = getProductReturnTo(location.pathname, location.search);
+  const detailState = getProductDetailState(
+    location.pathname,
+    location.search
+  );
+
+  function handleProductNavigate() {
+    saveListScrollPosition(detailState.returnTo);
+  }
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -27,7 +37,8 @@ export function ProductCards({ products }: ProductCardsProps) {
         <Link
           key={product.id}
           to={`/products/${product.id}`}
-          state={{ returnTo }}
+          state={detailState}
+          onClick={handleProductNavigate}
           className="group block rounded-xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <Card className="relative h-full overflow-hidden pt-0 transition-shadow group-hover:shadow-md">

@@ -10,7 +10,10 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { getProductReturnTo } from "~/utils/product-navigation";
+import {
+  getProductDetailState,
+  saveListScrollPosition,
+} from "~/utils/product-navigation";
 import type { Product } from "~/utils/products";
 import { formatPrice, truncateDescription } from "~/utils/products";
 
@@ -21,7 +24,14 @@ type ProductTableProps = {
 
 export function ProductTable({ products, loadingRows = 0 }: ProductTableProps) {
   const location = useLocation();
-  const returnTo = getProductReturnTo(location.pathname, location.search);
+  const detailState = getProductDetailState(
+    location.pathname,
+    location.search
+  );
+
+  function handleProductNavigate() {
+    saveListScrollPosition(detailState.returnTo);
+  }
 
   return (
     <div className="rounded-xl ring-1 ring-foreground/10">
@@ -43,7 +53,8 @@ export function ProductTable({ products, loadingRows = 0 }: ProductTableProps) {
               <TableCell>
                 <Link
                   to={`/products/${product.id}`}
-                  state={{ returnTo }}
+                  state={detailState}
+                  onClick={handleProductNavigate}
                   className="block rounded-md focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   <img
@@ -57,7 +68,8 @@ export function ProductTable({ products, loadingRows = 0 }: ProductTableProps) {
               <TableCell className="max-w-xs whitespace-normal">
                 <Link
                   to={`/products/${product.id}`}
-                  state={{ returnTo }}
+                  state={detailState}
+                  onClick={handleProductNavigate}
                   className="rounded-sm font-medium hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   {product.title}
