@@ -1,3 +1,5 @@
+import { env } from "~/lib/env";
+
 export type Product = {
   id: number;
   title: string;
@@ -180,7 +182,7 @@ function applyClientFilters(
 
 export async function fetchProduct(id: number) {
   const response = await fetch(
-    `${import.meta.env.VITE_API_URL}/products/${id}`
+    `${env.apiUrl}/products/${id}`
   );
 
   if (response.status === 404) {
@@ -196,7 +198,7 @@ export async function fetchProduct(id: number) {
 
 export async function fetchCategories() {
   const response = await fetch(
-    `${import.meta.env.VITE_API_URL}/products/category-list`
+    `${env.apiUrl}/products/category-list`
   );
 
   if (!response.ok) {
@@ -221,7 +223,7 @@ export async function fetchProducts({
 
   if (!hasActiveProductFilters(filters)) {
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/products?limit=${limit}&skip=${skip}`
+      `${env.apiUrl}/products?limit=${limit}&skip=${skip}`
     );
 
     if (!response.ok) {
@@ -234,11 +236,11 @@ export async function fetchProducts({
   let url: string;
 
   if (q) {
-    url = `${import.meta.env.VITE_API_URL}/products/search?q=${encodeURIComponent(q)}&limit=0`;
+    url = `${env.apiUrl}/products/search?q=${encodeURIComponent(q)}&limit=0`;
   } else if (category) {
-    url = `${import.meta.env.VITE_API_URL}/products/category/${encodeURIComponent(category)}?limit=0`;
+    url = `${env.apiUrl}/products/category/${encodeURIComponent(category)}?limit=0`;
   } else {
-    url = `${import.meta.env.VITE_API_URL}/products?limit=0`;
+    url = `${env.apiUrl}/products?limit=0`;
   }
 
   const response = await fetch(url);

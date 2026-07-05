@@ -1,3 +1,5 @@
+import { env } from "~/lib/env";
+
 export type AuthSession = {
   id: number;
   username: string;
@@ -23,7 +25,7 @@ export function getSession(): AuthSession | null {
 
 export async function login(username: string, password: string) {
   const response = await fetch(
-    `${import.meta.env.VITE_API_URL}${import.meta.env.VITE_AUTH_LOGIN_URL}`,
+    `${env.apiUrl}${env.authLoginUrl}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -53,7 +55,7 @@ export async function fetchCurrentUser() {
   }
 
   const response = await fetch(
-    `${import.meta.env.VITE_API_URL}${import.meta.env.VITE_AUTH_USER_URL}`,
+    `${env.apiUrl}${env.authUserUrl}`,
     {
       method: "GET",
       headers: {
@@ -74,7 +76,7 @@ export async function refreshSession() {
   const session = getSession();
 
   const response = await fetch(
-    `${import.meta.env.VITE_API_URL}${import.meta.env.VITE_AUTH_REFRESH_URL}`,
+    `${env.apiUrl}${env.authRefreshUrl}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
