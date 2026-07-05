@@ -117,6 +117,19 @@ Primjer: `/?q=phone&category=smartphones&minPrice=100&maxPrice=500&page=1`
 - Prijava preko DummyJSON `/auth/login`
 - Token se sprema u `localStorage`
 - Demo podaci: **emilys** / **emilyspass**
+- Nakon prijave preusmjeravanje na stranicu s koje ste došli (npr. `/favorites`)
+
+### Favoriti (`/favorites`) — zaštićena ruta
+
+- Dostupno samo prijavljenim korisnicima
+- Neautorizirani korisnici se preusmjeravaju na `/auth`
+- Dodavanje/uklanjanje favorita ikonom srca na karticama i detaljima proizvoda
+- Favoriti se spremaju u `localStorage` po korisniku
+
+### Dark mode
+
+- Toggle u navigaciji (sunce/mjesec ikona)
+- Podržava light, dark i system temu
 
 ## Struktura projekta
 
@@ -131,10 +144,12 @@ app/
 ├── routes/
 │   ├── home.tsx           # Lista proizvoda
 │   ├── product-detail.tsx # Detalji proizvoda
+│   ├── favorites.tsx      # Zaštićena lista favorita
 │   └── auth.tsx           # Prijava
 ├── utils/
 │   ├── products.ts
 │   ├── auth.ts
+│   ├── favorites.ts
 │   └── product-navigation.ts
 └── lib/
     ├── query-client.ts

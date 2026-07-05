@@ -1,6 +1,7 @@
 import {
   useInfiniteQuery,
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -87,6 +88,16 @@ export function useProductQuery(id: number) {
     queryKey: queryKeys.products.detail(id),
     queryFn: () => fetchProduct(id),
     enabled: Number.isFinite(id) && id > 0,
+  });
+}
+
+export function useFavoriteProductsQuery(ids: number[]) {
+  return useQueries({
+    queries: ids.map((id) => ({
+      queryKey: queryKeys.products.detail(id),
+      queryFn: () => fetchProduct(id),
+      staleTime: 5 * 60 * 1000,
+    })),
   });
 }
 

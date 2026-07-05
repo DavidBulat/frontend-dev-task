@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router";
 
+import { FavoriteButton } from "~/components/products/favorite-button";
 import { Badge } from "~/components/ui/badge";
 import {
   Card,
@@ -29,7 +30,11 @@ export function ProductCards({ products }: ProductCardsProps) {
           state={{ returnTo }}
           className="group block rounded-xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          <Card className="h-full overflow-hidden pt-0 transition-shadow group-hover:shadow-md">
+          <Card className="relative h-full overflow-hidden pt-0 transition-shadow group-hover:shadow-md">
+            <FavoriteButton
+              productId={product.id}
+              className="absolute top-2 right-2 z-10"
+            />
             <img
               src={product.thumbnail}
               alt={product.title}

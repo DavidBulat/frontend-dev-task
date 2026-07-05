@@ -1,9 +1,18 @@
 import { screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ProductCards } from "./product-cards";
 import { renderWithProviders } from "../../../test/test-utils";
 import type { Product } from "~/utils/products";
+
+vi.mock("~/hooks/use-favorites", () => ({
+  useFavorites: () => ({
+    ids: [],
+    isLoggedIn: false,
+    isFavorite: () => false,
+    toggle: vi.fn(),
+  }),
+}));
 
 const mockProduct: Product = {
   id: 12,

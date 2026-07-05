@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router";
 import type { Route } from "./+types/product-detail";
 import { ProductDetailSkeleton } from "~/components/products/product-detail-skeleton";
 import { ProductGallery } from "~/components/products/product-gallery";
+import { FavoriteButton } from "~/components/products/favorite-button";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -108,6 +109,9 @@ export default function ProductDetail({ params }: Route.ComponentProps) {
               <h1 className="font-heading text-3xl font-semibold tracking-tight">
                 {product.title}
               </h1>
+              <div className="flex items-center gap-2">
+                <FavoriteButton productId={product.id} size="sm" />
+              </div>
               <div className="flex flex-wrap items-baseline gap-3">
                 <p className="text-2xl font-semibold">
                   {formatPrice(discountedPrice)}

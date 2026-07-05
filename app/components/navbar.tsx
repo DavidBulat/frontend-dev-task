@@ -1,9 +1,11 @@
-import { LogInIcon, LogOutIcon, PackageIcon } from "lucide-react";
+import { HeartIcon, LogInIcon, LogOutIcon, PackageIcon } from "lucide-react";
 import { NavLink, useNavigate } from "react-router";
 
+import { ThemeToggle } from "~/components/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
+import { useFavorites } from "~/hooks/use-favorites";
 import {
   useCurrentUserQuery,
   useLogoutMutation,
@@ -26,6 +28,7 @@ const navLinkClassName = ({
 export function Navbar() {
   const navigate = useNavigate();
   const isLoggedIn = !!getSession();
+  const { ids } = useFavorites();
   const { data: user, isPending } = useCurrentUserQuery();
   const logoutMutation = useLogoutMutation();
   const displayUser = user ?? getSession();
@@ -52,6 +55,18 @@ export function Navbar() {
             <PackageIcon />
             Products
           </NavLink>
+
+          {isLoggedIn && (
+            <NavLink to="/favorites" className={navLinkClassName}>
+              <HeartIcon />
+              <span className="hidden sm:inline">Favorites</span>
+              {ids.length > 0 && (
+                <span className="text-xs text-muted-foreground">({ids.length})</span>
+              )}
+            </NavLink>
+          )}
+
+          <ThemeToggle />
 
           {isLoggedIn ? (
             <div className="ml-1 flex items-center gap-2">

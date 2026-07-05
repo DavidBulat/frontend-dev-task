@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { AlertCircleIcon } from "lucide-react";
 
 import type { Route } from "./+types/auth";
@@ -22,6 +22,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Spinner } from "~/components/ui/spinner";
 import { useLoginMutation } from "~/hooks/use-queries";
+import { getReturnToFromState } from "~/utils/product-navigation";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -32,6 +33,8 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Auth() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo = getReturnToFromState(location.state);
   const loginMutation = useLoginMutation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -42,7 +45,7 @@ export default function Auth() {
     loginMutation.mutate(
       { username, password },
       {
-        onSuccess: () => navigate("/"),
+        onSuccess: () => navigate(returnTo),
       }
     );
   }
