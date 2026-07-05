@@ -21,9 +21,12 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { useCategoriesQuery } from "~/hooks/use-queries";
 import {
   buildProductSearchParams,
+  decodeProductSort,
+  encodeProductSort,
   formatCategoryLabel,
   hasActiveProductFilters,
   parseProductSearchParams,
+  PRODUCT_SORT_OPTIONS,
 } from "~/utils/products";
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -82,7 +85,8 @@ export function ProductFiltersBar() {
   const hasSheetFilters =
     !!filters.category ||
     filters.minPrice != null ||
-    filters.maxPrice != null;
+    filters.maxPrice != null ||
+    !!filters.sortBy;
 
   return (
     <div className="rounded-xl border bg-card p-4 ring-1 ring-foreground/10">
@@ -127,6 +131,11 @@ export function ProductFiltersBar() {
                     categoriesPending={categoriesPending}
                     onUpdate={updateParams}
                   />
+                  <ProductSortSelect
+                    id="product-sort-mobile"
+                    filters={filters}
+                    onUpdate={updateParams}
+                  />
                   {hasActiveProductFilters(filters) && (
                     <Button
                       variant="outline"
@@ -158,6 +167,10 @@ export function ProductFiltersBar() {
           categoriesPending={categoriesPending}
           onUpdate={updateParams}
         />
+      </div>
+
+      <div className="mt-4 hidden max-w-xs sm:block">
+        <ProductSortSelect filters={filters} onUpdate={updateParams} />
       </div>
 
       {hasActiveProductFilters(filters) && (
@@ -248,6 +261,36 @@ function AdvancedFilters({
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+function ProductSortSelect({
+  id = "product-sort",
+  filters,
+  onUpdate,
+}: {
+  id?: string;
+  filters: ReturnType<typeof parseProductSearchParams>;
+  onUpdate: (updates: Parameters<typeof buildProductSearchParams>[1]) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>Sort by</Label>
+      <NativeSelect
+        id={id}
+        value={encodeProductSort(filters.sortBy, filters.order)}
+        onChange={(event) => {
+          const { sortBy, order } = decodeProductSort(event.target.value);
+          onUpdate({ sortBy, order, page: 1 });
+        }}
+      >
+        {PRODUCT_SORT_OPTIONS.map((option) => (
+          <NativeSelectOption key={option.value} value={option.value}>
+            {option.label}
+          </NativeSelectOption>
+        ))}
+      </NativeSelect>
     </div>
   );
 }

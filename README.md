@@ -2,6 +2,8 @@
 
 Single-page aplikacija za pregled kataloga proizvoda s pretragom, filtriranjem, paginacijom i detaljima proizvoda. Podaci dolaze iz [DummyJSON](https://dummyjson.com) REST API-ja.
 
+**Live demo:** [https://solution-david-bulat.vercel.app/](https://solution-david-bulat.vercel.app/)
+
 ## Tehnologije
 
 - React 19 + TypeScript (strict)

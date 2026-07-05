@@ -41,6 +41,8 @@ export type ProductsResponse = {
 
 export type ProductView = "cards" | "table";
 export type ProductScrollMode = "pages" | "infinite";
+export type ProductSortField = "price" | "rating" | "title";
+export type ProductSortOrder = "asc" | "desc";
 
 export type ProductFilters = {
   q: string;
@@ -54,15 +56,29 @@ export type ProductSearchParams = ProductFilters & {
   limit: number;
   view: ProductView;
   scroll: ProductScrollMode;
+  sortBy: ProductSortField | "";
+  order: ProductSortOrder;
 };
 
 export type ProductListFilters = ProductFilters & {
   limit: number;
   page: number;
+  sortBy: ProductSortField | "";
+  order: ProductSortOrder;
 };
 
 export const DEFAULT_LIMIT = 12;
 export const LIMIT_OPTIONS = [12, 24, 48] as const;
+
+export const PRODUCT_SORT_OPTIONS = [
+  { value: "", label: "Default" },
+  { value: "price-asc", label: "Price: low to high" },
+  { value: "price-desc", label: "Price: high to low" },
+  { value: "rating-desc", label: "Rating: highest first" },
+  { value: "rating-asc", label: "Rating: lowest first" },
+  { value: "title-asc", label: "Name: A to Z" },
+  { value: "title-desc", label: "Name: Z to A" },
+] as const;
 
 function parseOptionalPrice(value: string | null) {
   if (!value) {
@@ -73,11 +89,47 @@ function parseOptionalPrice(value: string | null) {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 }
 
+function parseSortField(value: string | null): ProductSortField | "" {
+  if (value === "price" || value === "rating" || value === "title") {
+    return value;
+  }
+
+  return "";
+}
+
+export function encodeProductSort(
+  sortBy: ProductSortField | "",
+  order: ProductSortOrder
+) {
+  return sortBy ? `${sortBy}-${order}` : "";
+}
+
+export function decodeProductSort(value: string): {
+  sortBy: ProductSortField | "";
+  order: ProductSortOrder;
+} {
+  if (!value) {
+    return { sortBy: "", order: "asc" };
+  }
+
+  const [field, order] = value.split("-") as [string, ProductSortOrder | undefined];
+
+  if (field === "price" || field === "rating" || field === "title") {
+    return {
+      sortBy: field,
+      order: order === "desc" ? "desc" : "asc",
+    };
+  }
+
+  return { sortBy: "", order: "asc" };
+}
+
 export function parseProductSearchParams(
   searchParams: URLSearchParams
 ): ProductSearchParams {
   const rawPage = Number(searchParams.get("page"));
   const rawLimit = Number(searchParams.get("limit"));
+  const sortBy = parseSortField(searchParams.get("sortBy"));
 
   return {
     q: searchParams.get("q")?.trim() ?? "",
@@ -92,6 +144,8 @@ export function parseProductSearchParams(
     view: searchParams.get("view") === "table" ? "table" : "cards",
     scroll:
       searchParams.get("scroll") === "infinite" ? "infinite" : "pages",
+    sortBy,
+    order: searchParams.get("order") === "desc" ? "desc" : "asc",
   };
 }
 
@@ -105,6 +159,8 @@ export function toProductListFilters(
     maxPrice: params.maxPrice,
     limit: params.limit,
     page: params.page,
+    sortBy: params.sortBy,
+    order: params.order,
   };
 }
 
@@ -147,6 +203,13 @@ export function buildProductSearchParams(
     params.set("scroll", next.scroll);
   }
 
+  if (next.sortBy) {
+    params.set("sortBy", next.sortBy);
+    if (next.order !== "asc") {
+      params.set("order", next.order);
+    }
+  }
+
   return params;
 }
 
@@ -177,6 +240,32 @@ function applyClientFilters(
     }
 
     return true;
+  });
+}
+
+export function sortProducts(
+  products: Product[],
+  sortBy: ProductSortField | "",
+  order: ProductSortOrder
+) {
+  if (!sortBy) {
+    return products;
+  }
+
+  const direction = order === "asc" ? 1 : -1;
+
+  return [...products].sort((left, right) => {
+    let comparison = 0;
+
+    if (sortBy === "title") {
+      comparison = left.title.localeCompare(right.title);
+    } else if (sortBy === "price") {
+      comparison = left.price - right.price;
+    } else {
+      comparison = left.rating - right.rating;
+    }
+
+    return comparison * direction;
   });
 }
 
@@ -215,15 +304,33 @@ export async function fetchProducts({
   category = "",
   minPrice = null,
   maxPrice = null,
+  sortBy = "",
+  order = "asc",
 }: ProductFilters & {
   limit?: number;
   skip?: number;
+  sortBy?: ProductSortField | "";
+  order?: ProductSortOrder;
 }) {
   const filters: ProductFilters = { q, category, minPrice, maxPrice };
+  const hasFilters = hasActiveProductFilters(filters);
+  const hasSort = !!sortBy;
 
-  if (!hasActiveProductFilters(filters)) {
+  if (!hasFilters && !hasSort) {
     const response = await fetch(
       `${env.apiUrl}/products?limit=${limit}&skip=${skip}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch products");
+    }
+
+    return (await response.json()) as ProductsResponse;
+  }
+
+  if (!hasFilters && hasSort) {
+    const response = await fetch(
+      `${env.apiUrl}/products?limit=${limit}&skip=${skip}&sortBy=${sortBy}&order=${order}`
     );
 
     if (!response.ok) {
@@ -251,11 +358,12 @@ export async function fetchProducts({
 
   const data = (await response.json()) as ProductsResponse;
   const filtered = applyClientFilters(data.products, filters);
-  const paginated = filtered.slice(skip, skip + limit);
+  const sorted = sortProducts(filtered, sortBy, order);
+  const paginated = sorted.slice(skip, skip + limit);
 
   return {
     products: paginated,
-    total: filtered.length,
+    total: sorted.length,
     skip,
     limit,
   } satisfies ProductsResponse;

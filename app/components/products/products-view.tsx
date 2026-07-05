@@ -33,6 +33,8 @@ export function ProductsView() {
     params.category,
     params.minPrice,
     params.maxPrice,
+    params.sortBy,
+    params.order,
     limit,
   ].join("-");
 
@@ -43,6 +45,8 @@ export function ProductsView() {
     minPrice: params.minPrice,
     maxPrice: params.maxPrice,
     limit,
+    sortBy: params.sortBy,
+    order: params.order,
   });
   const isContentReady = isInfinite ? !isInfinitePending : !isPagesPending;
 
@@ -150,13 +154,15 @@ function InfiniteSummary({
 }: {
   filters: ReturnType<typeof toProductListFilters>;
 }) {
-  const { q, category, minPrice, maxPrice, limit } = filters;
+  const { q, category, minPrice, maxPrice, limit, sortBy, order } = filters;
   const { data, isPending } = useInfiniteProductsQuery({
     q,
     category,
     minPrice,
     maxPrice,
     limit,
+    sortBy,
+    order,
   });
 
   if (isPending || !data) {

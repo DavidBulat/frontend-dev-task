@@ -2,13 +2,17 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildProductSearchParams,
+  decodeProductSort,
+  encodeProductSort,
   formatCategoryLabel,
   getPageRange,
   getTotalPages,
   getVisiblePages,
   hasActiveProductFilters,
   parseProductSearchParams,
+  sortProducts,
   truncateDescription,
+  type Product,
 } from "./products";
 
 describe("parseProductSearchParams", () => {
@@ -22,10 +26,31 @@ describe("parseProductSearchParams", () => {
       limit: 12,
       view: "cards",
       scroll: "pages",
+      sortBy: "",
+      order: "asc",
     });
   });
 
   it("parses filters and pagination from the URL", () => {
+    const params = new URLSearchParams(
+      "q=phone&category=smartphones&minPrice=100&maxPrice=500&page=2&limit=24&view=table&scroll=infinite&sortBy=price&order=desc"
+    );
+
+    expect(parseProductSearchParams(params)).toEqual({
+      q: "phone",
+      category: "smartphones",
+      minPrice: 100,
+      maxPrice: 500,
+      page: 2,
+      limit: 24,
+      view: "table",
+      scroll: "infinite",
+      sortBy: "price",
+      order: "desc",
+    });
+  });
+
+  it("defaults sort when sort params are missing", () => {
     const params = new URLSearchParams(
       "q=phone&category=smartphones&minPrice=100&maxPrice=500&page=2&limit=24&view=table&scroll=infinite"
     );
@@ -39,7 +64,59 @@ describe("parseProductSearchParams", () => {
       limit: 24,
       view: "table",
       scroll: "infinite",
+      sortBy: "",
+      order: "asc",
     });
+  });
+});
+
+describe("product sort helpers", () => {
+  const products: Product[] = [
+    {
+      id: 1,
+      title: "Zebra Phone",
+      description: "",
+      category: "smartphones",
+      price: 300,
+      discountPercentage: 0,
+      rating: 4.2,
+      stock: 10,
+      brand: "A",
+      thumbnail: "",
+    },
+    {
+      id: 2,
+      title: "Alpha Phone",
+      description: "",
+      category: "smartphones",
+      price: 100,
+      discountPercentage: 0,
+      rating: 4.8,
+      stock: 10,
+      brand: "B",
+      thumbnail: "",
+    },
+  ];
+
+  it("encodes and decodes sort options", () => {
+    expect(encodeProductSort("price", "desc")).toBe("price-desc");
+    expect(decodeProductSort("rating-asc")).toEqual({
+      sortBy: "rating",
+      order: "asc",
+    });
+    expect(decodeProductSort("")).toEqual({ sortBy: "", order: "asc" });
+  });
+
+  it("sorts products by price, rating, and title", () => {
+    expect(sortProducts(products, "price", "asc").map((product) => product.id)).toEqual([
+      2, 1,
+    ]);
+    expect(sortProducts(products, "rating", "desc").map((product) => product.id)).toEqual([
+      2, 1,
+    ]);
+    expect(sortProducts(products, "title", "asc").map((product) => product.id)).toEqual([
+      2, 1,
+    ]);
   });
 });
 
@@ -56,6 +133,23 @@ describe("buildProductSearchParams", () => {
 
     expect(params.toString()).toBe(
       "q=phone&category=smartphones&page=2&limit=24&view=table&scroll=infinite"
+    );
+  });
+
+  it("includes sort params when sorting is active", () => {
+    const params = buildProductSearchParams(new URLSearchParams(), {
+      q: "phone",
+      category: "smartphones",
+      page: 2,
+      limit: 24,
+      view: "table",
+      scroll: "infinite",
+      sortBy: "price",
+      order: "desc",
+    });
+
+    expect(params.toString()).toBe(
+      "q=phone&category=smartphones&page=2&limit=24&view=table&scroll=infinite&sortBy=price&order=desc"
     );
   });
 

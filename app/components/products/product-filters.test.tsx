@@ -36,6 +36,7 @@ describe("ProductFiltersBar", () => {
     expect(screen.getByLabelText("Category")).toBeInTheDocument();
     expect(screen.getByLabelText("Min price")).toBeInTheDocument();
     expect(screen.getByLabelText("Max price")).toBeInTheDocument();
+    expect(screen.getByLabelText("Sort by")).toBeInTheDocument();
   });
 
   it("updates the URL when category changes", async () => {

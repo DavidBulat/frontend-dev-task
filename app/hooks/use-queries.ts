@@ -30,7 +30,13 @@ function toListQueryFilters({ page, ...filters }: ProductListFilters) {
   };
 }
 
-function toInfiniteQueryFilters(filters: ProductFilters & { limit: number }) {
+function toInfiniteQueryFilters(
+  filters: ProductFilters & {
+    limit: number;
+    sortBy: ProductListFilters["sortBy"];
+    order: ProductListFilters["order"];
+  }
+) {
   return filters;
 }
 
@@ -55,12 +61,18 @@ export function useProductsQuery(filters: ProductListFilters) {
         maxPrice: filters.maxPrice,
         limit: filters.limit,
         skip: queryFilters.skip,
+        sortBy: filters.sortBy,
+        order: filters.order,
       }),
   });
 }
 
 export function useInfiniteProductsQuery(
-  filters: ProductFilters & { limit: number }
+  filters: ProductFilters & {
+    limit: number;
+    sortBy: ProductListFilters["sortBy"];
+    order: ProductListFilters["order"];
+  }
 ) {
   const queryFilters = toInfiniteQueryFilters(filters);
 
@@ -74,6 +86,8 @@ export function useInfiniteProductsQuery(
         maxPrice: filters.maxPrice,
         limit: filters.limit,
         skip: pageParam,
+        sortBy: filters.sortBy,
+        order: filters.order,
       }),
     initialPageParam: 0,
     getNextPageParam: (lastPage) => {

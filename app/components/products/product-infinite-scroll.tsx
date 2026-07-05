@@ -14,10 +14,10 @@ import {
   EmptyTitle,
 } from "~/components/ui/empty";
 import { useInfiniteProductsQuery } from "~/hooks/use-queries";
-import type { ProductFilters, ProductView } from "~/utils/products";
+import type { ProductListFilters, ProductView } from "~/utils/products";
 
 type ProductInfiniteScrollProps = {
-  filters: ProductFilters & { limit: number; page: number };
+  filters: ProductListFilters;
   view: ProductView;
 };
 
@@ -26,7 +26,7 @@ export function ProductInfiniteScroll({
   view,
 }: ProductInfiniteScrollProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const { q, category, minPrice, maxPrice, limit } = filters;
+  const { limit } = filters;
   const {
     data,
     isPending,
@@ -35,13 +35,7 @@ export function ProductInfiniteScroll({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteProductsQuery({
-    q,
-    category,
-    minPrice,
-    maxPrice,
-    limit,
-  });
+  } = useInfiniteProductsQuery(filters);
 
   useEffect(() => {
     const node = sentinelRef.current;
